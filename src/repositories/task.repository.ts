@@ -110,7 +110,7 @@ export class TaskRepository {
           userId,
         },
       });
-      /* istanbul ignore next */  
+      /* istanbul ignore next */
     } catch (error) {
       this.logger.error({ error }, 'Error deleting task');
       // Prisma's P2025 error code indicates record to delete not found
