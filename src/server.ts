@@ -13,6 +13,8 @@ import { register } from './utils/metrics';
 import { config } from './config';
 import { logger as appLogger } from './utils/logger';
 import { type Logger } from 'pino';
+import swaggerUi from 'swagger-ui-express';
+import * as openApiDocument from '../public/openapi.json';
 
 export class App {
   private app: Application;
@@ -65,6 +67,13 @@ export class App {
     this.app.get('/', (req: Request, _res: Response) => {
       _res.send('API is running!');
     });
+
+      // API Docs
+      this.app.use(
+        '/api-docs',
+        swaggerUi.serve,
+        swaggerUi.setup(openApiDocument)
+      );
 
     // Observability endpoints
     this.app.get('/healthz', (_req: Request, res: Response) => {

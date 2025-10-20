@@ -1,0 +1,201 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Task API",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/api/v1/tasks": {
+        "get": {
+          "summary": "Get all tasks for a user",
+          "security": [
+            { "UserIdAuth": [] }
+          ],
+          "responses": {
+            "200": {
+              "description": "A list of tasks"
+            },
+            "401": {
+              "description": "Unauthorized - User ID header is missing or invalid"
+            }
+          }
+        },
+        "post": {
+          "summary": "Create a new task",
+          "security": [
+            { "UserIdAuth": [] }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTask"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Task created"
+            },
+            "400": {
+              "description": "Bad Request - Invalid input data"
+            },
+            "401": {
+              "description": "Unauthorized - User ID header is missing or invalid"
+            }
+          }
+        }
+      },
+      "/api/v1/tasks/{id}": {
+        "get": {
+          "summary": "Get a single task by its ID",
+          "security": [
+            { "UserIdAuth": [] }
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "A single task"
+            },
+            "400": {
+              "description": "Bad Request - Invalid task ID format"
+            },
+            "401": {
+              "description": "Unauthorized - User ID header is missing or invalid"
+            },
+            "404": {
+              "description": "Not Found - Task not found"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update a task",
+          "security": [
+            { "UserIdAuth": [] }
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateTask"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Task updated"
+            },
+            "400": {
+              "description": "Bad Request - Invalid input data or task ID format"
+            },
+            "401": {
+              "description": "Unauthorized - User ID header is missing or invalid"
+            },
+            "404": {
+              "description": "Not Found - Task not found"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete a task",
+          "security": [
+            { "UserIdAuth": [] }
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Task deleted"
+            },
+            "400": {
+              "description": "Bad Request - Invalid task ID format"
+            },
+            "401": {
+              "description": "Unauthorized - User ID header is missing or invalid"
+            },
+            "404": {
+              "description": "Not Found - Task not found"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "CreateTask": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 5000
+            }
+          },
+          "required": [
+            "title"
+          ]
+        },
+        "UpdateTask": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 5000
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "todo",
+                "in_progress",
+                "done",
+                "archived"
+              ]
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "UserIdAuth": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "X-User-Id"
+        }
+      }
+    }
+  }
