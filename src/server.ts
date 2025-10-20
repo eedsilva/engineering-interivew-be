@@ -4,8 +4,11 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { Server as HttpServer } from 'http';
 import { PrismaClient } from '@prisma/client';
-// import swaggerUi from 'swagger-ui-express';
+import { userAuthMiddleware } from './middleware/auth';
 import { errorHandler } from './middleware/error.handler';
+import { requestIdMiddleware } from './middleware/request-id';
+import { metricsMiddleware } from './middleware/metrics';
+import { register } from './utils/metrics';
 import { config } from './config';
 
 export class App {
@@ -24,6 +27,8 @@ export class App {
   }
 
   private initializeMiddleware() {
+    this.app.use(requestIdMiddleware);
+    this.app.use(metricsMiddleware);
     this.app.use(express.json());
     this.app.use(
       pino({
@@ -69,6 +74,14 @@ export class App {
         res.status(503).json({ status: 'not ready' });
       }
     });
+
+    this.app.get('/metrics', async (req: Request, res: Response) => {
+      res.set('Content-Type', register.contentType);
+      res.end(await register.metrics());
+    });
+
+    const v1Router = Router();
+    v1Router.use(userAuthMiddleware);
   }
 
   private initializeErrorHandling() {
