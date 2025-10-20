@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: mydb
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks: 
+      - every_default
 
   test-postgres:
     image: postgres:14-alpine
@@ -21,7 +23,13 @@ services:
       POSTGRES_DB: testdb
     volumes:
       - test_postgres_data:/var/lib/postgresql/data
+    networks: 
+      - every_default
 
 volumes:
   postgres_data:
   test_postgres_data:
+
+networks:
+  every_default:
+    name: every_default
