@@ -5,6 +5,7 @@ import cors from 'cors';
 import { Server as HttpServer } from 'http';
 import { PrismaClient } from '@prisma/client';
 import { userAuthMiddleware } from './middleware/auth';
+import taskRouter from './routes/task.router';
 import { errorHandler } from './middleware/error.handler';
 import { requestIdMiddleware } from './middleware/request-id';
 import { metricsMiddleware } from './middleware/metrics';
@@ -82,6 +83,11 @@ export class App {
 
     const v1Router = Router();
     v1Router.use(userAuthMiddleware);
+
+    // Mount the task router
+    v1Router.use('/tasks', taskRouter);
+
+    this.app.use('/api/v1', v1Router);
   }
 
   private initializeErrorHandling() {
@@ -118,7 +124,6 @@ export class App {
           reject(dbErr);
         }
       });
-
     });
   }
 }
