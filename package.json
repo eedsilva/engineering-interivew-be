@@ -16,6 +16,7 @@
     "start": "node dist/index.js",
     "dev": "ts-node --files src/index.ts | pino-pretty",
     "test": "jest",
+    "test:cov": "jest --coverage",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prisma:migrate:dev": "prisma migrate dev",

@@ -5,7 +5,6 @@ import { ZodError } from 'zod';
 import { asyncHandler } from '../utils/async-handler';
 import { NotFoundError } from '../errors/not-found.error';
 import { ValidationError } from '../errors/validation.error';
-import { HttpError } from '../errors/http-error';
 import { BadRequestError } from '../errors/bad-request.error';
 import { type Logger } from 'pino';
 
@@ -18,27 +17,13 @@ export class TaskController {
     this.taskService = new TaskService(this.logger);
   }
 
-  // NOTE: The `if (!req.userId)` check is repeated in each controller method.
-  // This is a deliberate choice for two reasons:
-  // 1. Defensive Programming: It acts as a safeguard to ensure that if the `userAuthMiddleware`
-  //    is ever accidentally omitted from a route, the request fails immediately with a 500 error,
-  //    indicating a server-side configuration issue.
-  // 2. TypeScript Type Guard: It proves to the TypeScript compiler that `req.userId` is a non-null
-  //    string for the remainder of the function's scope, preventing potential type errors.
   public createTask = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
       this.logger.info({ body: req.body }, 'Handling create task request');
-      if (!req.userId) {
-        throw new HttpError(
-          500,
-          'https://example.com/probs/internal-server-error',
-          'Internal Server Error',
-          'User ID missing from request after auth middleware.'
-        );
-      }
       try {
         const taskData = createTaskSchema.parse(req.body);
-        const task = await this.taskService.createTask(req.userId, taskData);
+        // We can safely use the non-null assertion (!) because the userAuthMiddleware guarantees req.userId exists.
+        const task = await this.taskService.createTask(req.userId!, taskData);
         res.status(201).json(task);
       } catch (error) {
         this.logger.error({ error }, 'Error creating task');
@@ -56,14 +41,6 @@ export class TaskController {
         { params: req.params },
         'Handling get task by id request'
       );
-      if (!req.userId) {
-        throw new HttpError(
-          500,
-          'https://example.com/probs/internal-server-error',
-          'Internal Server Error',
-          'User ID missing from request after auth middleware.'
-        );
-      }
 
       if (!req.params.id) {
         throw new BadRequestError(
@@ -72,7 +49,7 @@ export class TaskController {
       }
 
       const task = await this.taskService.getTaskById(
-        req.userId,
+        req.userId!,
         req.params.id
       );
       if (!task) {
@@ -86,15 +63,7 @@ export class TaskController {
   public getAllTasks = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
       this.logger.info('Handling get all tasks request');
-      if (!req.userId) {
-        throw new HttpError(
-          500,
-          'https://example.com/probs/internal-server-error',
-          'Internal Server Error',
-          'User ID missing from request after auth middleware.'
-        );
-      }
-      const tasks = await this.taskService.getAllTasks(req.userId);
+      const tasks = await this.taskService.getAllTasks(req.userId!);
       res.status(200).json(tasks);
     }
   );
@@ -105,14 +74,6 @@ export class TaskController {
         { params: req.params, body: req.body },
         'Handling update task request'
       );
-      if (!req.userId) {
-        throw new HttpError(
-          500,
-          'https://example.com/probs/internal-server-error',
-          'Internal Server Error',
-          'User ID missing from request after auth middleware.'
-        );
-      }
       if (!req.params.id) {
         throw new BadRequestError(
           'A task ID must be provided in the URL path.'
@@ -121,7 +82,7 @@ export class TaskController {
       try {
         const taskData = updateTaskSchema.parse(req.body);
         const task = await this.taskService.updateTask(
-          req.userId,
+          req.userId!,
           req.params.id,
           taskData
         );
@@ -146,22 +107,16 @@ export class TaskController {
   public deleteTask = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
       this.logger.info({ params: req.params }, 'Handling delete task request');
-      if (!req.userId) {
-        throw new HttpError(
-          500,
-          'https://example.com/probs/internal-server-error',
-          'Internal Server Error',
-          'User ID missing from request after auth middleware.'
-        );
-      }
-
       if (!req.params.id) {
         throw new BadRequestError(
           'A task ID must be provided in the URL path.'
         );
       }
 
-      const task = await this.taskService.deleteTask(req.userId, req.params.id);
+      const task = await this.taskService.deleteTask(
+        req.userId!,
+        req.params.id
+      );
       if (!task) {
         this.logger.warn(
           { taskId: req.params.id },

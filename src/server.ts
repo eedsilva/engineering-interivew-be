@@ -68,12 +68,12 @@ export class App {
       _res.send('API is running!');
     });
 
-      // API Docs
-      this.app.use(
-        '/api-docs',
-        swaggerUi.serve,
-        swaggerUi.setup(openApiDocument)
-      );
+    // API Docs
+    this.app.use(
+      '/api-docs',
+      swaggerUi.serve,
+      swaggerUi.setup(openApiDocument)
+    );
 
     // Observability endpoints
     this.app.get('/healthz', (_req: Request, res: Response) => {
