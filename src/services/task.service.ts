@@ -4,18 +4,22 @@ import { ConflictError } from '../errors/conflict.error';
 import { BadRequestError } from '../errors/bad-request.error';
 
 import { CreateTaskInput, UpdateTaskInput } from '../schemas/task.schema';
+import { type Logger } from 'pino';
 
 export class TaskService {
   private taskRepository: TaskRepository;
+  private logger: Logger;
 
-  constructor() {
-    this.taskRepository = new TaskRepository();
+  constructor(logger: Logger) {
+    this.logger = logger.child({ context: 'TaskService' });
+    this.taskRepository = new TaskRepository(this.logger);
   }
 
   public async createTask(
     userId: string,
     data: CreateTaskInput
   ): Promise<Task> {
+    this.logger.info({ userId, data }, 'Creating task');
     const trimmedData = {
       ...data,
       title: data.title.trim(),
@@ -29,6 +33,7 @@ export class TaskService {
     );
 
     if (existingTask) {
+      this.logger.warn({ userId, data }, 'Task already exists');
       throw new ConflictError(
         'A task with the same title and description already exists for this user.'
       );
@@ -41,10 +46,12 @@ export class TaskService {
     userId: string,
     taskId: string
   ): Promise<Task | null> {
+    this.logger.info({ userId, taskId }, 'Getting task by id');
     return this.taskRepository.findTaskById(userId, taskId);
   }
 
   public async getAllTasks(userId: string): Promise<Task[]> {
+    this.logger.info({ userId }, 'Getting all tasks for user');
     return this.taskRepository.findTasksByUserId(userId);
   }
 
@@ -53,6 +60,7 @@ export class TaskService {
     taskId: string,
     data: UpdateTaskInput
   ): Promise<Task | null> {
+    this.logger.info({ userId, taskId, data }, 'Updating task');
     const currentTask = await this.taskRepository.findTaskById(userId, taskId);
     if (!currentTask) {
       return null;
@@ -70,6 +78,10 @@ export class TaskService {
       const requestedStatus = data.status;
 
       if (!allowedTransitions[currentStatus]!.includes(requestedStatus)) {
+        this.logger.warn(
+          { userId, taskId, currentStatus, requestedStatus },
+          'Invalid status transition'
+        );
         throw new BadRequestError(
           `Invalid status transition from '${currentStatus}' to '${requestedStatus}'.`
         );
@@ -83,6 +95,7 @@ export class TaskService {
     userId: string,
     taskId: string
   ): Promise<Task | null> {
+    this.logger.info({ userId, taskId }, 'Deleting task');
     return this.taskRepository.deleteTask(userId, taskId);
   }
 }

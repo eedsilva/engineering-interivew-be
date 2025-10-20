@@ -5,23 +5,27 @@ import cors from 'cors';
 import { Server as HttpServer } from 'http';
 import { PrismaClient } from '@prisma/client';
 import { userAuthMiddleware } from './middleware/auth';
-import taskRouter from './routes/task.router';
+import { createTaskRouter } from './routes/task.router';
 import { errorHandler } from './middleware/error.handler';
 import { requestIdMiddleware } from './middleware/request-id';
 import { metricsMiddleware } from './middleware/metrics';
 import { register } from './utils/metrics';
 import { config } from './config';
+import { logger as appLogger } from './utils/logger';
+import { type Logger } from 'pino';
 
 export class App {
   private app: Application;
   private server: HttpServer | null = null;
   private readonly port: number;
   private prisma: PrismaClient;
+  private logger: Logger;
 
   constructor() {
     this.app = express();
     this.port = config.PORT;
     this.prisma = new PrismaClient();
+    this.logger = appLogger;
     this.initializeMiddleware();
     this.initializeRoutes();
     this.initializeErrorHandling();
@@ -85,6 +89,7 @@ export class App {
     v1Router.use(userAuthMiddleware);
 
     // Mount the task router
+    const taskRouter = createTaskRouter(this.logger);
     v1Router.use('/tasks', taskRouter);
 
     this.app.use('/api/v1', v1Router);

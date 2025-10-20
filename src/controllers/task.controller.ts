@@ -7,12 +7,15 @@ import { NotFoundError } from '../errors/not-found.error';
 import { ValidationError } from '../errors/validation.error';
 import { HttpError } from '../errors/http-error';
 import { BadRequestError } from '../errors/bad-request.error';
+import { type Logger } from 'pino';
 
 export class TaskController {
   private taskService: TaskService;
+  private logger: Logger;
 
-  constructor() {
-    this.taskService = new TaskService();
+  constructor(logger: Logger) {
+    this.logger = logger.child({ context: 'TaskController' });
+    this.taskService = new TaskService(this.logger);
   }
 
   // NOTE: The `if (!req.userId)` check is repeated in each controller method.
@@ -24,6 +27,7 @@ export class TaskController {
   //    string for the remainder of the function's scope, preventing potential type errors.
   public createTask = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
+      this.logger.info({ body: req.body }, 'Handling create task request');
       if (!req.userId) {
         throw new HttpError(
           500,
@@ -37,6 +41,7 @@ export class TaskController {
         const task = await this.taskService.createTask(req.userId, taskData);
         res.status(201).json(task);
       } catch (error) {
+        this.logger.error({ error }, 'Error creating task');
         if (error instanceof ZodError) {
           throw new ValidationError(error);
         }
@@ -47,6 +52,10 @@ export class TaskController {
 
   public getTaskById = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
+      this.logger.info(
+        { params: req.params },
+        'Handling get task by id request'
+      );
       if (!req.userId) {
         throw new HttpError(
           500,
@@ -57,7 +66,9 @@ export class TaskController {
       }
 
       if (!req.params.id) {
-        throw new BadRequestError('A task ID must be provided in the URL path.');
+        throw new BadRequestError(
+          'A task ID must be provided in the URL path.'
+        );
       }
 
       const task = await this.taskService.getTaskById(
@@ -65,6 +76,7 @@ export class TaskController {
         req.params.id
       );
       if (!task) {
+        this.logger.warn({ taskId: req.params.id }, 'Task not found');
         throw new NotFoundError('Task not found');
       }
       res.status(200).json(task);
@@ -73,6 +85,7 @@ export class TaskController {
 
   public getAllTasks = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
+      this.logger.info('Handling get all tasks request');
       if (!req.userId) {
         throw new HttpError(
           500,
@@ -88,6 +101,10 @@ export class TaskController {
 
   public updateTask = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
+      this.logger.info(
+        { params: req.params, body: req.body },
+        'Handling update task request'
+      );
       if (!req.userId) {
         throw new HttpError(
           500,
@@ -97,7 +114,9 @@ export class TaskController {
         );
       }
       if (!req.params.id) {
-        throw new BadRequestError('A task ID must be provided in the URL path.');
+        throw new BadRequestError(
+          'A task ID must be provided in the URL path.'
+        );
       }
       try {
         const taskData = updateTaskSchema.parse(req.body);
@@ -107,10 +126,15 @@ export class TaskController {
           taskData
         );
         if (!task) {
+          this.logger.warn(
+            { taskId: req.params.id },
+            'Task not found for update'
+          );
           throw new NotFoundError('Task not found');
         }
         res.status(200).json(task);
       } catch (error) {
+        this.logger.error({ error }, 'Error updating task');
         if (error instanceof ZodError) {
           throw new ValidationError(error);
         }
@@ -121,6 +145,7 @@ export class TaskController {
 
   public deleteTask = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
+      this.logger.info({ params: req.params }, 'Handling delete task request');
       if (!req.userId) {
         throw new HttpError(
           500,
@@ -131,11 +156,17 @@ export class TaskController {
       }
 
       if (!req.params.id) {
-        throw new BadRequestError('A task ID must be provided in the URL path.');
+        throw new BadRequestError(
+          'A task ID must be provided in the URL path.'
+        );
       }
 
       const task = await this.taskService.deleteTask(req.userId, req.params.id);
       if (!task) {
+        this.logger.warn(
+          { taskId: req.params.id },
+          'Task not found for deletion'
+        );
         throw new NotFoundError('Task not found');
       }
 
