@@ -1,85 +1,203 @@
-# Getting Started with the Every.io Engineering Challenge
+# Every.io Engineering Challenge - Task API
 
-Thanks for taking the time to complete the Every.io code challenge. Don't worry, it's not too hard, and please do not spend more than 3-4 hours. We know you have lots of these to do, and it can be very time consuming.
+*Maintained by: Ed Silva*
+*Date: October 20, 2025*
 
-## What We're Evaluating
+This repository contains the solution for the Every.io engineering challenge. It is a production-grade REST API for a task management application, built with Node.js, Express, TypeScript, and PostgreSQL.
 
-We're looking for senior engineers who can write production-ready code. While we want you to demonstrate your skills, please be mindful of the time constraint (3-4 hours). Here's what we'll be assessing:
+## Features
 
-### Key Areas
-- **Code Quality & Readability**: Clean, maintainable code that's easy for other engineers to understand
-- **Architecture & Design**: Well-organized structure with appropriate separation of concerns
-- **Technical Implementation**: Solid error handling, validation, and consideration of edge cases
-- **Security**: Proper authentication, authorization, and protection against common vulnerabilities
-- **Testing**: Automated tests that cover critical functionality
-- **Documentation**: Clear setup instructions and explanation of your approach
+- **CRUD Operations:** Full support for creating, reading, updating, and deleting tasks.
+- **Authorization:** Users can only access and modify their own tasks. Authorization is handled via an `X-User-Id` header.
+- **Layered Architecture:** Follows a clean, layered architecture (Controllers, Services, Repositories) for separation of concerns and testability.
+- **Database Migrations:** Uses Prisma for schema management and migrations.
+- **Observability:**
+  - Structured logging with request IDs.
+  - Health check endpoints (`/healthz`, `/readyz`).
+  - Prometheus metrics endpoint (`/metrics`).
+- **API Documentation:** Interactive API documentation available via Swagger UI.
+- **Testing:** Comprehensive integration test suite using Jest and Supertest against a real database.
+- **Containerization:** Multi-stage Dockerfile for a lean production image, orchestrated with Docker Compose.
 
-### What "Good" Looks Like
-We value pragmatic engineering decisions over perfect solutions. Consider:
-- Tradeoffs between simplicity and sophistication given the time constraint
-- Production-readiness aspects (even if simplified for this challenge)
-- Self-awareness about limitations and what you'd improve with more time
+## Architecture Overview
 
-**Feel free to go beyond the requirements in ways that showcase your expertise!** We appreciate thoughtful extras that demonstrate senior-level thinking.
+The application is structured in the following layers:
 
-## Requirements
+- **`controllers`**: Handles HTTP request/response logic and input validation.
+- **`services`**: Contains the core business logic.
+- **`repositories`**: Manages all database interactions via the Prisma client.
+- **`middleware`**: Contains Express middleware for concerns like authentication, error handling, and metrics.
+- **`schemas`**: Defines Zod schemas for robust input validation.
+- **`utils`**: Contains utility functions and configurations (e.g., metrics, OpenAPI).
 
-You will be creating an API for a task application.
+## Environment Variables
 
-1. This application will have tasks with four different states:
-   - To do
-   - In Progress
-   - Done
-   - Archived
-2. Each task should contain: Title, Description, and what the current status is.
-3. A task can be archived and moved between columns, or statuses.
-4. Tasks belong to specific users, and your API should enforce that users can only view and modify their own tasks.
+The application uses the following environment variables, defined in the `.env` file. A `.env.test` file is also used for the test environment.
 
-### Note on Authentication vs Authorization
-To keep this challenge time-boxed, **you do not need to implement full authentication** (signup/login/password management/JWT tokens).
+| Variable       | Description                                       | Default (dev)                                                    |
+| :------------- | :------------------------------------------------ | :--------------------------------------------------------------- |
+| `DATABASE_URL` | The connection string for the PostgreSQL database. | `postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public` |
+| `PORT`         | The port the application will listen on.          | `3000`                                                           |
+| `LOG_LEVEL`    | The minimum level of logs to output.              | `warn`                                                           |
 
-Instead, your API should accept a user identifier (e.g., via header, query parameter, or path parameter) and implement proper **authorization** - ensuring that users can only access and modify their own tasks. Feel free to use mock users or a simple user lookup approach.
+## API Endpoints
 
-We want to see that you understand authorization principles and data modeling, without spending time on authentication boilerplate.
+All API endpoints are prefixed with `/api/v1` and require an `X-User-Id` header for authorization.
 
-## Ideal
+| Method   | Endpoint       | Description                   |
+| :------- | :------------- | :---------------------------- |
+| `POST`   | `/tasks`       | Create a new task.            |
+| `GET`    | `/tasks`       | Get all tasks for the user.   |
+| `GET`    | `/tasks/:id`   | Get a single task by its ID.  |
+| `PATCH`  | `/tasks/:id`   | Update a task.                |
+| `DELETE` | `/tasks/:id`   | Delete a task.                |
 
-- Typescript
-- Tests
-- Dockerized Application
+### Management Endpoints
 
-## Extra credit
+| Method | Endpoint    | Description                                                      |
+| :----- | :---------- | :--------------------------------------------------------------- |
+| `GET`  | `/api-docs` | Serves the interactive Swagger UI documentation.               |
+| `GET`  | `/healthz`  | Liveness probe to check if the server is running.                |
+| `GET`  | `/readyz`   | Readiness probe to check if the server can connect to the database. |
+| `GET`  | `/metrics`  | Exposes application metrics in Prometheus format.              |
 
-- Logging
+## Getting Started
 
-## Technical Guidance
+### Prerequisites
 
-You have flexibility in your implementation choices:
+- Node.js (v18 or later)
+- npm
+- Docker and Docker Compose
 
-- **Framework**: Use any Node.js framework you're comfortable with (Express, Fastify, NestJS, etc.)
-- **Database**: Choose any database that fits your approach (PostgreSQL, SQLite, in-memory, etc.)
-- **ORM/Query Builder**: Use your preferred data access layer (Prisma, TypeORM, Sequelize, ...we love Prisma)
-- **API Design**: RESTful API with JSON responses expected
+### 1. Clone the repository
 
-## Expected Deliverables
+```bash
+git clone https://github.com/eedsilva/engineering-interivew-be.git
+cd engineering-interivew-be
+```
 
-Please ensure your submission includes:
+### 2. Install dependencies
 
-1. **Working API** with all core functionality
-2. **Clear setup instructions** in your README (how to install dependencies, set up database, run the application)
-3. **Automated tests** covering critical functionality
-4. **Docker setup** (Dockerfile at minimum, docker-compose optional)
+```bash
+npm install
+```
 
-## Submission Instructions
+### 3. Start the databases
 
-Please submit your completed challenge via GitHub:
+This command starts both the development and test PostgreSQL databases in the background.
 
-1. **Public Repository**: Push your solution to a public GitHub repository and share the link with us
+```bash
+docker-compose up -d
+```
 
-2. **Private Repository**: If you prefer to keep your solution private, create a private GitHub repository and add the following collaborators:
-   - @barrypeterson
-   - @jmatusevich
-   - @falecci
-   - @danfsd
+### 4. Run database migrations
 
-Please include clear setup and running instructions in your README.
+```bash
+npm run prisma:migrate:dev
+```
+
+### 5. Run the application
+
+This will start the development server on `http://localhost:3000`.
+
+```bash
+npm run dev
+```
+
+## Usage
+
+- **API Base URL:** `http://localhost:3000`
+- **API Documentation (Swagger):** `http://localhost:3000/api-docs`
+- **Health Check:** `http://localhost:3000/healthz`
+- **Metrics:** `http://localhost:3000/metrics`
+
+### Checking Metrics
+
+The `/metrics` endpoint exposes application metrics in the Prometheus exposition format. You can inspect them with `curl`:
+
+```bash
+curl http://localhost:3000/metrics
+```
+
+The output will be plain text. The custom counter for HTTP requests will look similar to this:
+
+```
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",route="/",status_code="200"} 8
+http_requests_total{method="GET",route="/api/v1/tasks",status_code="200"} 5
+```
+
+While you can view this directly, the intended use is for a Prometheus server to scrape this endpoint to build graphs and alerts.
+
+### API Examples (cURL)
+
+**Important:** Before using the API, you need a valid user ID. Since there is no signup endpoint, you must create a user first by running the provided helper script:
+
+```bash
+# This will create a new user in the database and print their ID
+ts-node createUser.ts
+```
+
+Copy the generated ID and use it in the `X-User-Id` header for all subsequent API calls.
+
+**Create a Task:**
+
+```bash
+# Replace YOUR_USER_ID with the ID from the script
+curl -X POST http://localhost:3000/api/v1/tasks \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: YOUR_USER_ID" \
+  -d '{"title": "My first task", "description": "This is a test."}'
+```
+
+**Get All Tasks:**
+
+```bash
+# Replace YOUR_USER_ID with the ID from the script
+curl http://localhost:3000/api/v1/tasks \
+  -H "X-User-Id: YOUR_USER_ID"
+```
+
+## Running Tests
+
+To run the full integration test suite, use the following command. It will automatically connect to the test database and run migrations.
+
+```bash
+npm test
+or
+npm run test:cov
+```
+
+## Running with Docker
+
+To build and run the application as a Docker container:
+
+1.  **Build the image:**
+
+    ```bash
+    docker build -t task-api .
+    ```
+
+2.  **Run the container:**
+
+    Make sure your development database is running (`docker-compose up -d postgres`).
+
+    ```bash
+    docker run -p 3000:3000 
+      --network=every_default 
+      -e DATABASE_URL="postgresql://johndoe:randompassword@postgres:5432/mydb?schema=public" 
+      task-api
+    ```
+
+    *Note: `--network=every_default` connects the container to the same network as the Docker Compose services, allowing it to reach the `postgres` container.* 
+
+## Tradeoffs and Future Improvements
+
+- **Authentication:** The challenge explicitly excluded full authentication. In a real-world scenario, the `X-User-Id` header would be replaced with a proper authentication mechanism like JWTs from a login flow.
+- **OpenAPI Generation:** The `openapi.json` is currently static for simplicity. It could be generated dynamically from the Zod schemas and route definitions to ensure it's always in sync.
+- **Idempotency:** The `Idempotency-Key` header for `POST` requests was planned but not implemented. This would prevent duplicate resource creation from client-side retries.
+- **Pagination:** The `GET /tasks` endpoint returns all tasks for a user. For users with a large number of tasks, this should be paginated to ensure predictable and fast responses.
+- **Filtering and Sorting:** The API could be enhanced with query parameters to allow filtering tasks by status (`?status=done`) or sorting by different fields (`?sortBy=updatedAt`).
+- **Dedicated Status Update Endpoint:** For more granular control and clearer API semantics, a dedicated endpoint like `PATCH /tasks/:id/status` could be introduced to handle only status changes.
+- **CI/CD:** GitHub Actions workflow for automated linting, testing, and building.
